@@ -1,10 +1,12 @@
 import requests
-from pydantic import BaseModel, Field, parse_obj_as
+from pydantic import BaseModel, Field, TypeAdapter
 from requests import Response
 
 from diff_poetry_lock.settings import Settings
 
-MAGIC_COMMENT_IDENTIFIER = "<!-- posted by Github Action nborrmann/diff-poetry-lock -->\n\n"
+MAGIC_COMMENT_IDENTIFIER = (
+    "<!-- posted by Github Action nborrmann/diff-poetry-lock -->\n\n"
+)
 MAGIC_BOT_USER_ID = 41898282
 
 
@@ -17,7 +19,10 @@ class GithubComment(BaseModel):
     user: GithubUser
 
     def is_bot_comment(self) -> bool:
-        return self.body.startswith(MAGIC_COMMENT_IDENTIFIER) and self.user.id_ == MAGIC_BOT_USER_ID
+        return (
+            self.body.startswith(MAGIC_COMMENT_IDENTIFIER)
+            and self.user.id_ == MAGIC_BOT_USER_ID
+        )
 
 
 class GithubApi:
@@ -32,7 +37,10 @@ class GithubApi:
 
         r = self.session.post(
             f"{self.s.api_url}/repos/{self.s.repository}/issues/{self.s.pr_num()}/comments",
-            headers={"Authorization": f"Bearer {self.s.token}", "Accept": "application/vnd.github+json"},
+            headers={
+                "Authorization": f"Bearer {self.s.token}",
+                "Accept": "application/vnd.github+json",
+            },
             json={"body": f"{MAGIC_COMMENT_IDENTIFIER}{comment}"},
             timeout=10,
         )
@@ -41,7 +49,10 @@ class GithubApi:
     def update_comment(self, comment_id: int, comment: str) -> None:
         r = self.session.patch(
             f"{self.s.api_url}/repos/{self.s.repository}/issues/comments/{comment_id}",
-            headers={"Authorization": f"Bearer {self.s.token}", "Accept": "application/vnd.github+json"},
+            headers={
+                "Authorization": f"Bearer {self.s.token}",
+                "Accept": "application/vnd.github+json",
+            },
             json={"body": f"{MAGIC_COMMENT_IDENTIFIER}{comment}"},
             timeout=10,
         )
@@ -53,11 +64,14 @@ class GithubApi:
             r = self.session.get(
                 f"{self.s.api_url}/repos/{self.s.repository}/issues/{self.s.pr_num()}/comments",
                 params={"per_page": 100, "page": page},
-                headers={"Authorization": f"Bearer {self.s.token}", "Accept": "application/vnd.github+json"},
+                headers={
+                    "Authorization": f"Bearer {self.s.token}",
+                    "Accept": "application/vnd.github+json",
+                },
                 timeout=10,
             )
             r.raise_for_status()
-            comments = parse_obj_as(list[GithubComment], r.json())
+            comments = TypeAdapter(list[GithubComment]).validate_python(r.json())
             all_comments.extend(comments)
             page += 1
         return [c for c in all_comments if c.is_bot_comment()]
@@ -66,23 +80,33 @@ class GithubApi:
         r = self.session.get(
             f"{self.s.api_url}/repos/{self.s.repository}/contents/{self.s.lockfile_path}",
             params={"ref": ref},
-            headers={"Authorization": f"Bearer {self.s.token}", "Accept": "application/vnd.github.raw"},
+            headers={
+                "Authorization": f"Bearer {self.s.token}",
+                "Accept": "application/vnd.github.raw",
+            },
             timeout=10,
             stream=True,
         )
         if r.status_code == 404:  # noqa: PLR2004
-            raise FileNotFoundError(f"Lockfile {self.s.lockfile_path} not found on branch {ref}")
+            raise FileNotFoundError(
+                f"Lockfile {self.s.lockfile_path} not found on branch {ref}"
+            )
         r.raise_for_status()
         return r
 
     def delete_comment(self, comment_id: int) -> None:
         r = self.session.delete(
             f"{self.s.api_url}/repos/{self.s.repository}/issues/comments/{comment_id}",
-            headers={"Authorization": f"Bearer {self.s.token}", "Accept": "application/vnd.github+json"},
+            headers={
+                "Authorization": f"Bearer {self.s.token}",
+                "Accept": "application/vnd.github+json",
+            },
         )
         r.raise_for_status()
 
-    def upsert_comment(self, existing_comment: GithubComment | None, comment: str | None) -> None:
+    def upsert_comment(
+        self, existing_comment: GithubComment | None, comment: str | None
+    ) -> None:
         if existing_comment is None and comment is None:
             return
 

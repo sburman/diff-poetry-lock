@@ -8,24 +8,31 @@ from _pytest.monkeypatch import MonkeyPatch
 from requests_mock import Mocker
 
 from diff_poetry_lock.github import MAGIC_COMMENT_IDENTIFIER
-from diff_poetry_lock.run_poetry import PackageSummary, diff, do_diff, format_comment, load_packages, main
+from diff_poetry_lock.run_poetry import (
+    PackageSummary,
+    diff,
+    do_diff,
+    format_comment,
+    load_packages,
+    main,
+)
 from diff_poetry_lock.settings import Settings
 
 TESTFILE_1 = "diff_poetry_lock/test/res/poetry1.lock"
 TESTFILE_2 = "diff_poetry_lock/test/res/poetry2.lock"
 
 
-@pytest.fixture()
+@pytest.fixture
 def cfg() -> Settings:
     return create_settings()
 
 
-@pytest.fixture()
+@pytest.fixture
 def data1() -> bytes:
     return load_file(TESTFILE_1)
 
 
-@pytest.fixture()
+@pytest.fixture
 def data2() -> bytes:
     return load_file(TESTFILE_2)
 
@@ -51,7 +58,7 @@ def test_settings_not_pr(monkeypatch: MonkeyPatch) -> None:
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         main()
 
-    assert pytest_wrapped_e.type == SystemExit
+    assert isinstance(pytest_wrapped_e.type, SystemExit)
     assert pytest_wrapped_e.value.code == 0
 
 
@@ -62,8 +69,12 @@ def test_diff() -> None:
     summary: list[PackageSummary] = sorted(diff(old, new), key=attrgetter("name"))
 
     expected = [
-        PackageSummary(name="certifi", old_version="2022.12.7", new_version="2022.12.7"),
-        PackageSummary(name="charset-normalizer", old_version="3.1.0", new_version="3.1.0"),
+        PackageSummary(
+            name="certifi", old_version="2022.12.7", new_version="2022.12.7"
+        ),
+        PackageSummary(
+            name="charset-normalizer", old_version="3.1.0", new_version="3.1.0"
+        ),
         PackageSummary(name="idna", old_version="3.4", new_version="3.4"),
         PackageSummary(name="pydantic", old_version="1.10.6", new_version=None),
         PackageSummary(name="requests", old_version="2.28.2", new_version="2.28.2"),
@@ -90,8 +101,12 @@ def test_diff_2() -> None:
     summary: list[PackageSummary] = sorted(diff(old, new), key=attrgetter("name"))
 
     expected = [
-        PackageSummary(name="certifi", old_version="2022.12.7", new_version="2022.12.7"),
-        PackageSummary(name="charset-normalizer", old_version="3.1.0", new_version="3.1.0"),
+        PackageSummary(
+            name="certifi", old_version="2022.12.7", new_version="2022.12.7"
+        ),
+        PackageSummary(
+            name="charset-normalizer", old_version="3.1.0", new_version="3.1.0"
+        ),
         PackageSummary(name="idna", old_version="3.4", new_version="3.4"),
         PackageSummary(name="pydantic", old_version=None, new_version="1.10.6"),
         PackageSummary(name="requests", old_version="2.28.2", new_version="2.28.2"),
@@ -118,8 +133,12 @@ def test_diff_no_changes() -> None:
     summary: list[PackageSummary] = sorted(diff(old, new), key=attrgetter("name"))
 
     expected = [
-        PackageSummary(name="certifi", old_version="2022.12.7", new_version="2022.12.7"),
-        PackageSummary(name="charset-normalizer", old_version="3.1.0", new_version="3.1.0"),
+        PackageSummary(
+            name="certifi", old_version="2022.12.7", new_version="2022.12.7"
+        ),
+        PackageSummary(
+            name="charset-normalizer", old_version="3.1.0", new_version="3.1.0"
+        ),
         PackageSummary(name="idna", old_version="3.4", new_version="3.4"),
         PackageSummary(name="requests", old_version="2.28.2", new_version="2.28.2"),
         PackageSummary(name="urllib3", old_version="1.26.14", new_version="1.26.14"),
@@ -132,7 +151,10 @@ def test_file_loading_missing_file_base_ref(cfg: Settings) -> None:
     with requests_mock.Mocker() as m:
         m.get(
             f"{cfg.api_url}/repos/{cfg.repository}/contents/{cfg.lockfile_path}?ref={cfg.base_ref}",
-            headers={"Authorization": f"Bearer {cfg.token}", "Accept": "application/vnd.github.raw"},
+            headers={
+                "Authorization": f"Bearer {cfg.token}",
+                "Accept": "application/vnd.github.raw",
+            },
             status_code=404,
         )
 
@@ -144,12 +166,18 @@ def test_file_loading_missing_file_head_ref(cfg: Settings, data1: bytes) -> None
     with requests_mock.Mocker() as m:
         m.get(
             f"{cfg.api_url}/repos/{cfg.repository}/contents/{cfg.lockfile_path}?ref={cfg.base_ref}",
-            headers={"Authorization": f"Bearer {cfg.token}", "Accept": "application/vnd.github.raw"},
+            headers={
+                "Authorization": f"Bearer {cfg.token}",
+                "Accept": "application/vnd.github.raw",
+            },
             content=data1,
         )
         m.get(
             f"{cfg.api_url}/repos/{cfg.repository}/contents/{cfg.lockfile_path}?ref={cfg.ref}",
-            headers={"Authorization": f"Bearer {cfg.token}", "Accept": "application/vnd.github.raw"},
+            headers={
+                "Authorization": f"Bearer {cfg.token}",
+                "Accept": "application/vnd.github.raw",
+            },
             status_code=404,
         )
 
@@ -165,12 +193,19 @@ def test_e2e_no_diff_existing_comment(cfg: Settings, data1: bytes) -> None:
             {"body": "foobar", "id": 1334, "user": {"id": 123}},
             {"body": "foobar", "id": 1335, "user": {"id": 41898282}},
             {"body": f"{MAGIC_COMMENT_IDENTIFIER}", "id": 1336, "user": {"id": 123}},
-            {"body": f"{MAGIC_COMMENT_IDENTIFIER}foobar", "id": 1337, "user": {"id": 41898282}},
+            {
+                "body": f"{MAGIC_COMMENT_IDENTIFIER}foobar",
+                "id": 1337,
+                "user": {"id": 41898282},
+            },
         ]
         mock_list_comments(m, cfg, comments)
         m.delete(
             f"{cfg.api_url}/repos/{cfg.repository}/issues/comments/1337",
-            headers={"Authorization": f"Bearer {cfg.token}", "Accept": "application/vnd.github.raw"},
+            headers={
+                "Authorization": f"Bearer {cfg.token}",
+                "Accept": "application/vnd.github.raw",
+            },
         )
 
         do_diff(cfg)
@@ -194,14 +229,19 @@ def test_e2e_diff_inexisting_comment(cfg: Settings, data1: bytes, data2: bytes) 
         mock_list_comments(m, cfg, [])
         m.post(
             f"{cfg.api_url}/repos/{cfg.repository}/issues/{cfg.pr_num()}/comments",
-            headers={"Authorization": f"Bearer {cfg.token}", "Accept": "application/vnd.github.raw"},
+            headers={
+                "Authorization": f"Bearer {cfg.token}",
+                "Accept": "application/vnd.github.raw",
+            },
             json={"body": f"{MAGIC_COMMENT_IDENTIFIER}{summary}"},
         )
 
         do_diff(cfg)
 
 
-def test_e2e_diff_existing_comment_same_data(cfg: Settings, data1: bytes, data2: bytes) -> None:
+def test_e2e_diff_existing_comment_same_data(
+    cfg: Settings, data1: bytes, data2: bytes
+) -> None:
     summary = format_comment(diff(load_packages(TESTFILE_1), load_packages(TESTFILE_2)))
 
     with requests_mock.Mocker() as m:
@@ -211,14 +251,20 @@ def test_e2e_diff_existing_comment_same_data(cfg: Settings, data1: bytes, data2:
             {"body": "foobar", "id": 1334, "user": {"id": 123}},
             {"body": "foobar", "id": 1335, "user": {"id": 41898282}},
             {"body": f"{MAGIC_COMMENT_IDENTIFIER}", "id": 1336, "user": {"id": 123}},
-            {"body": f"{MAGIC_COMMENT_IDENTIFIER}{summary}", "id": 1337, "user": {"id": 41898282}},
+            {
+                "body": f"{MAGIC_COMMENT_IDENTIFIER}{summary}",
+                "id": 1337,
+                "user": {"id": 41898282},
+            },
         ]
         mock_list_comments(m, cfg, comments)
 
         do_diff(cfg)
 
 
-def test_e2e_diff_existing_comment_different_data(cfg: Settings, data1: bytes, data2: bytes) -> None:
+def test_e2e_diff_existing_comment_different_data(
+    cfg: Settings, data1: bytes, data2: bytes
+) -> None:
     summary = format_comment(diff(load_packages(TESTFILE_1), []))
 
     with requests_mock.Mocker() as m:
@@ -228,12 +274,19 @@ def test_e2e_diff_existing_comment_different_data(cfg: Settings, data1: bytes, d
             {"body": "foobar", "id": 1334, "user": {"id": 123}},
             {"body": "foobar", "id": 1335, "user": {"id": 41898282}},
             {"body": f"{MAGIC_COMMENT_IDENTIFIER}", "id": 1336, "user": {"id": 123}},
-            {"body": f"{MAGIC_COMMENT_IDENTIFIER}{summary}", "id": 1337, "user": {"id": 41898282}},
+            {
+                "body": f"{MAGIC_COMMENT_IDENTIFIER}{summary}",
+                "id": 1337,
+                "user": {"id": 41898282},
+            },
         ]
         mock_list_comments(m, cfg, comments)
         m.patch(
             f"{cfg.api_url}/repos/{cfg.repository}/issues/comments/1337",
-            headers={"Authorization": f"Bearer {cfg.token}", "Accept": "application/vnd.github.raw"},
+            headers={
+                "Authorization": f"Bearer {cfg.token}",
+                "Accept": "application/vnd.github.raw",
+            },
             json={"body": f"{MAGIC_COMMENT_IDENTIFIER}{summary}"},
         )
 
@@ -245,10 +298,15 @@ def load_file(filename: str) -> bytes:
         return f.read()
 
 
-def mock_list_comments(m: Mocker, s: Settings, response_json: list[dict[Any, Any]]) -> None:
+def mock_list_comments(
+    m: Mocker, s: Settings, response_json: list[dict[Any, Any]]
+) -> None:
     m.get(
         f"{s.api_url}/repos/{s.repository}/issues/{s.pr_num()}/comments?per_page=100&page=1",
-        headers={"Authorization": f"Bearer {s.token}", "Accept": "application/vnd.github.raw"},
+        headers={
+            "Authorization": f"Bearer {s.token}",
+            "Accept": "application/vnd.github.raw",
+        },
         json=response_json,
     )
 
@@ -256,7 +314,10 @@ def mock_list_comments(m: Mocker, s: Settings, response_json: list[dict[Any, Any
 def mock_get_file(m: Mocker, s: Settings, data: bytes, ref: str) -> None:
     m.get(
         f"{s.api_url}/repos/{s.repository}/contents/{s.lockfile_path}?ref={ref}",
-        headers={"Authorization": f"Bearer {s.token}", "Accept": "application/vnd.github.raw"},
+        headers={
+            "Authorization": f"Bearer {s.token}",
+            "Accept": "application/vnd.github.raw",
+        },
         content=data,
     )
 

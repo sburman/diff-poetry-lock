@@ -12,7 +12,7 @@ from diff_poetry_lock.settings import Settings
 
 
 def load_packages(filename: str = "poetry.lock") -> list[Package]:
-    l_merged = Locker(Path(filename), local_config={})
+    l_merged = Locker(Path(filename), pyproject_data={})
     return l_merged.locked_repository().packages
 
 
@@ -29,7 +29,11 @@ class PackageSummary:
         return not self.not_changed()
 
     def updated(self) -> bool:
-        return self.new_version is not None and self.old_version is not None and self.changed()
+        return (
+            self.new_version is not None
+            and self.old_version is not None
+            and self.changed()
+        )
 
     def added(self) -> bool:
         return self.new_version is not None and self.old_version is None
@@ -51,10 +55,14 @@ class PackageSummary:
         return f"Not changed **{self.name}** ({self.new_version})"
 
 
-def diff(old_packages: list[Package], new_packages: list[Package]) -> list[PackageSummary]:
+def diff(
+    old_packages: list[Package], new_packages: list[Package]
+) -> list[PackageSummary]:
     merged: dict[str, PackageSummary] = {}
     for package in old_packages:
-        merged[package.pretty_name] = PackageSummary(name=package.pretty_name, old_version=package.full_pretty_version)
+        merged[package.pretty_name] = PackageSummary(
+            name=package.pretty_name, old_version=package.full_pretty_version
+        )
     for package in new_packages:
         if package.pretty_name not in merged:
             merged[package.pretty_name] = PackageSummary(
@@ -71,7 +79,10 @@ def post_comment(api: GithubApi, comment: str | None) -> None:
     existing_comments = api.list_comments()
 
     if len(existing_comments) > 1:
-        print("Found more than one existing comment, only updating first comment", file=sys.stderr)
+        print(
+            "Found more than one existing comment, only updating first comment",
+            file=sys.stderr,
+        )
 
     existing_comment = existing_comments[0] if existing_comments else None
     api.upsert_comment(existing_comment, comment)
@@ -81,16 +92,16 @@ def format_comment(packages: list[PackageSummary]) -> str | None:
     added = sorted([p for p in packages if p.added()], key=attrgetter("name"))
     removed = sorted([p for p in packages if p.removed()], key=attrgetter("name"))
     updated = sorted([p for p in packages if p.updated()], key=attrgetter("name"))
-    not_changed = sorted([p for p in packages if p.not_changed()], key=attrgetter("name"))
+    not_changed = sorted(
+        [p for p in packages if p.not_changed()], key=attrgetter("name")
+    )
 
     if len(added + removed + updated) == 0:
         return None
 
     comment = f"### Detected {len(added + removed + updated)} changes to dependencies in Poetry lockfile\n\n"
     comment += "\n".join(p.summary_line() for p in added + removed + updated)
-    comment += (
-        f"\n\n*({len(added)} added, {len(removed)} removed, {len(updated)} updated, {len(not_changed)} not changed)*"
-    )
+    comment += f"\n\n*({len(added)} added, {len(removed)} removed, {len(updated)} updated, {len(not_changed)} not changed)*"
 
     return comment
 
